@@ -121,9 +121,22 @@ public class Problem3 {
         user.setN(n);
     }
 
+    public static int modPow(int base, int exponent, int modulus) {
+        int result = 1;
+        base = base % modulus;
+        while (exponent > 0) {
+            if ((exponent & 1) == 1) {
+                result = (result * base) % modulus;
+            }
+            base = (base * base) % modulus;
+            exponent >>= 1;
+        }
+        return result;
+    }
+
     public static int encrypt(int message, User sender, User receiver ) {
         //int e = publicKey;
-        int e = sender.getPrivateKey();
+        /**int e = sender.getPrivateKey();
         int encryptedText = 1;
         while (e > 0) {
             encryptedText *= message;
@@ -138,12 +151,14 @@ public class Problem3 {
             e -= 1;
         }
 
-        return encryptedText;
+        return encryptedText;*/
+        int encryptedWithPrivateKey = modPow(message,sender.getPrivateKey(), sender.getN());
+        return modPow(encryptedWithPrivateKey,receiver.getPublicKey(), receiver.getN());
     }
 
     public static int decrypt( int encryptedText, User sender, User receiver) {
       // int d = privateKey;
-      int d = receiver.getPublicKey();
+      /**int d = receiver.getPublicKey();
       int decrypted = 1;
       while (d > 0 ) {
           decrypted *= encryptedText;
@@ -157,7 +172,9 @@ public class Problem3 {
           decrypted %= sender.getN();
           d -= 1;
       }
-      return decrypted;
+      return decrypted;*/
+      int decryptedWithPublicKey = modPow(encryptedText, receiver.getPublicKey(), receiver.getN());
+      return modPow(decryptedWithPublicKey, sender.getPrivateKey(),sender.getN());
     }
 
     public static List<Integer> encoder(String message, User sender, User receiver) {
