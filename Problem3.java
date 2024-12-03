@@ -118,6 +118,7 @@ public class Problem3 {
         privateKey = modLinearEquationSolver(e, 1, phi);
         user.setPrivateKey(privateKey);
         user.setPublicKey(publicKey);
+        user.setN(n);
     }
 
     public static int encrypt(int message, User sender, User receiver ) {
@@ -126,14 +127,14 @@ public class Problem3 {
         int encryptedText = 1;
         while (e > 0) {
             encryptedText *= message;
-            encryptedText %= n;
+            encryptedText %= sender.getN();
             e -= 1;
         }
 
         e = receiver.getPublicKey();
         while (e > 0) {
             encryptedText *= message;
-            encryptedText %= n;
+            encryptedText %= receiver.getN();
             e -= 1;
         }
 
@@ -146,14 +147,14 @@ public class Problem3 {
       int decrypted = 1;
       while (d > 0 ) {
           decrypted *= encryptedText;
-          decrypted %= n;
+          decrypted %= receiver.getN();
           d -= 1;
       }
 
-      d = receiver.getPublicKey();
+      d = sender.getPrivateKey();
       while (d > 0 ) {
           decrypted *= encryptedText;
-          decrypted %= n;
+          decrypted %= sender.getN();
           d -= 1;
       }
       return decrypted;
