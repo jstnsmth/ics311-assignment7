@@ -23,13 +23,13 @@ public class Problem3 {
         chooseKeys(Michael);
         chooseKeys(John);
         String message = "Text Message";
-        List<Integer> coded = encoder(message);
+        List<Integer> coded = encoder(message1.getMessageBody(), message1.getSender(), message1.getReceiver());
         System.out.println("Initial message");
-        System.out.println(message);
+        System.out.println(message1.getMessageBody());
         System.out.println("The encoded message");
         System.out.println(String.join("", coded.stream().map(Object::toString).toArray(String[] :: new)));
         System.out.println("Decoded message");
-        System.out.println(decoder(coded));
+        System.out.println(decoder(coded, message1.getSender(), message1.getReceiver()));
     }
 
     // Computes Prime numbers from 1-300;
@@ -121,19 +121,36 @@ public class Problem3 {
     }
 
     public static int encrypt(int message, User sender, User receiver ) {
-        int e = publicKey;
+        //int e = publicKey;
+        int e = sender.getPrivateKey();
         int encryptedText = 1;
         while (e > 0) {
             encryptedText *= message;
             encryptedText %= n;
             e -= 1;
         }
+
+        e = receiver.getPublicKey();
+        while (e > 0) {
+            encryptedText *= message;
+            encryptedText %= n;
+            e -= 1;
+        }
+
         return encryptedText;
     }
 
-    public static int decrypt( int encryptedText) {
-      int d = privateKey;
+    public static int decrypt( int encryptedText, User sender, User receiver) {
+      // int d = privateKey;
+      int d = receiver.getPublicKey();
       int decrypted = 1;
+      while (d > 0 ) {
+          decrypted *= encryptedText;
+          decrypted %= n;
+          d -= 1;
+      }
+
+      d = receiver.getPublicKey();
       while (d > 0 ) {
           decrypted *= encryptedText;
           decrypted %= n;
@@ -142,18 +159,18 @@ public class Problem3 {
       return decrypted;
     }
 
-    public static List<Integer> encoder(String message) {
+    public static List<Integer> encoder(String message, User sender, User receiver) {
         List<Integer> encoded = new ArrayList<>();
         for (char letter : message.toCharArray()) {
-            encoded.add(encrypt((int)letter));
+            encoded.add(encrypt((int)letter, sender, receiver));
         }
         return encoded;
     }
 
-    public static String decoder(List<Integer> encoded) {
+    public static String decoder(List<Integer> encoded, User sender, User receiver) {
         StringBuilder s = new StringBuilder();
         for (int num : encoded) {
-            s.append((char)decrypt(num));
+            s.append((char)decrypt(num, sender, receiver));
         }
         return s.toString();
     }
