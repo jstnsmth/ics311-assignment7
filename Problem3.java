@@ -10,24 +10,21 @@ public class Problem3 {
     public static Integer publicKey = null;
     public static Integer privateKey = null;
     public static void main(String[] args) {
-        /**sieveOfEratosthenes();
-        for (Integer primeNum : prime) {
-            System.out.println(primeNum);
-        }
-        System.out.println("size: " + prime.size());*/
         User Michael = new User();
         User John = new User();
-        Message message1 = new Message(Michael, John, null, "Text Message");
+        Message message1 = new Message(Michael, John, null, "Hey, How are you doing?");
 
         sieveOfEratosthenes();
         chooseKeys(Michael);
         chooseKeys(John);
-        String message = "Text Message";
+
         List<Integer> coded = encoder(message1.getMessageBody(), message1.getSender(), message1.getReceiver());
         System.out.println("Initial message");
         System.out.println(message1.getMessageBody());
+
         System.out.println("The encoded message");
         System.out.println(String.join("", coded.stream().map(Object::toString).toArray(String[] :: new)));
+
         System.out.println("Decoded message");
         System.out.println(decoder(coded, message1.getSender(), message1.getReceiver()));
     }
@@ -86,6 +83,7 @@ public class Problem3 {
         }
     }
 
+    // to compute d, the inverse of e modulo phi
     public static int modLinearEquationSolver(int a, int b, int n) {
         int[] values = extendedEuclid(a,n);
         int d = values[0];
@@ -101,10 +99,13 @@ public class Problem3 {
         return solution;
     }
 
+    // Computes private keys for the users
     public static void chooseKeys(User user) {
+        // selects two large prime numbers randomly
         int prime1 = pickPrimeNumber();
         int prime2 = pickPrimeNumber();
 
+        // computes n = pq and phi = (p-1)(q-1)
         n = prime1 * prime2;
         int phi = (prime1 - 1) * (prime2 -1);
         int e = 2;
@@ -121,6 +122,7 @@ public class Problem3 {
         user.setN(n);
     }
 
+    // Computes Modular exponentiation
     public static int modPow(int base, int exponent, int modulus) {
         int result = 1;
         base = base % modulus;
@@ -134,49 +136,20 @@ public class Problem3 {
         return result;
     }
 
+    // encryption using modPow helper function
+    // encrypts using sender's private key then receivers public key
     public static int encrypt(int message, User sender, User receiver ) {
-        //int e = publicKey;
-        /**int e = sender.getPrivateKey();
-        int encryptedText = 1;
-        while (e > 0) {
-            encryptedText *= message;
-            encryptedText %= sender.getN();
-            e -= 1;
-        }
-
-        e = receiver.getPublicKey();
-        while (e > 0) {
-            encryptedText *= message;
-            encryptedText %= receiver.getN();
-            e -= 1;
-        }
-
-        return encryptedText;*/
         int encryptedWithPrivateKey = modPow(message,sender.getPrivateKey(), sender.getN());
         return modPow(encryptedWithPrivateKey,receiver.getPublicKey(), receiver.getN());
     }
 
+    // decrypts message using receivers public key then sender's private key
     public static int decrypt( int encryptedText, User sender, User receiver) {
-      // int d = privateKey;
-      /**int d = receiver.getPublicKey();
-      int decrypted = 1;
-      while (d > 0 ) {
-          decrypted *= encryptedText;
-          decrypted %= receiver.getN();
-          d -= 1;
-      }
-
-      d = sender.getPrivateKey();
-      while (d > 0 ) {
-          decrypted *= encryptedText;
-          decrypted %= sender.getN();
-          d -= 1;
-      }
-      return decrypted;*/
       int decryptedWithPublicKey = modPow(encryptedText, receiver.getPublicKey(), receiver.getN());
       return modPow(decryptedWithPublicKey, sender.getPrivateKey(),sender.getN());
     }
 
+    // encrypts each character in message and adds to list
     public static List<Integer> encoder(String message, User sender, User receiver) {
         List<Integer> encoded = new ArrayList<>();
         for (char letter : message.toCharArray()) {
@@ -185,6 +158,7 @@ public class Problem3 {
         return encoded;
     }
 
+    // decrypts each character in the encoded array/encrypted message
     public static String decoder(List<Integer> encoded, User sender, User receiver) {
         StringBuilder s = new StringBuilder();
         for (int num : encoded) {
