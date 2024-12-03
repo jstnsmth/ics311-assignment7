@@ -15,9 +15,13 @@ public class Problem3 {
             System.out.println(primeNum);
         }
         System.out.println("size: " + prime.size());*/
+        User Michael = new User();
+        User John = new User();
+        Message message1 = new Message(Michael, John, null, "Text Message");
 
         sieveOfEratosthenes();
-        chooseKeys();
+        chooseKeys(Michael);
+        chooseKeys(John);
         String message = "Text Message";
         List<Integer> coded = encoder(message);
         System.out.println("Initial message");
@@ -97,7 +101,7 @@ public class Problem3 {
         return solution;
     }
 
-    public static void chooseKeys() {
+    public static void chooseKeys(User user) {
         int prime1 = pickPrimeNumber();
         int prime2 = pickPrimeNumber();
 
@@ -112,9 +116,11 @@ public class Problem3 {
         }
         publicKey = e;
         privateKey = modLinearEquationSolver(e, 1, phi);
+        user.setPrivateKey(privateKey);
+        user.setPublicKey(publicKey);
     }
 
-    public static int encrypt(int message) {
+    public static int encrypt(int message, User sender, User receiver ) {
         int e = publicKey;
         int encryptedText = 1;
         while (e > 0) {

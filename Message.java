@@ -10,4 +10,16 @@ public class Message {
         this.metadata = metadata;
         this.messageBody = messageBody;
     }
+
+    public String getMessageBody() {
+        return messageBody;
+    }
+
+    public User getReceiver() {
+        return receiver;
+    }
+
+    public User getSender() {
+        return sender;
+    }
 }
