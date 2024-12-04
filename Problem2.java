@@ -1,80 +1,79 @@
 public class Problem2 {
-    private static final int SAMPLING_RATE = 44100;  // Standard audio sampling rate
-    private static double lossiness = 0.2;  // Default 20% lossy compression
+    private static double lossiness = 0.2;  // setting default lossy compression to 20%
 
     public static void main(String[] args) {
-        // Create test users
+        // making test users
         User Alice = new User();
         User Bob = new User();
         
-        // Create a test message
-        Message message1 = new Message(Alice, Bob, null, "Hello, this is a test message with some fine details that might get blurry!");
+        Message message1 = new Message(Alice, Bob, null, "Hello, this is a test message with some fine details!");
 
-        // Demonstrate compression and decompression
-        System.out.println("Original message:");
+        // printing original message
+        System.out.println("Initial message:");
         System.out.println(message1.getMessageBody());
 
-        // Compress the message
+        // compressing and showing compressed version
         Message compressedMessage = compressMessage(message1);
-        System.out.println("\nCompressed message (length: " + compressedMessage.getMessageBody().length() + "):");
+        System.out.println("\nThe compressed message:");
         System.out.println(compressedMessage.getMessageBody());
 
-        // Decompress the message
+        // decompressing and showing result
         Message decompressedMessage = decompressMessage(compressedMessage);
         System.out.println("\nDecompressed message:");
         System.out.println(decompressedMessage.getMessageBody());
     }
 
-    // FFT compression
     public static Message compressMessage(Message originalMessage) {
         String original = originalMessage.getMessageBody();
         int originalLength = original.length();
         
-        // Convert string to numerical samples
+        // changing the string into numbers we can use
         double[] samples = new double[originalLength];
         for (int i = 0; i < originalLength; i++) {
             samples[i] = (double) original.charAt(i);
         }
         
-        // Pad the array to the next power of 2 if necessary
+        // need to make the array a power of 2 for FFT
         int paddedLength = nextPowerOf2(originalLength);
         double[] paddedSamples = new double[paddedLength];
         System.arraycopy(samples, 0, paddedSamples, 0, originalLength);
         
-        // Apply FFT
         Complex[] fft = fft(paddedSamples);
         
-        // Apply lossy compression by zeroing out high frequencies
+        // doing the lossy compression by getting rid of high frequencies
         int cutoff = (int) (fft.length * (1.0 - lossiness));
         for (int i = cutoff; i < fft.length; i++) {
             fft[i] = new Complex(0, 0);
         }
         
-        // Convert FFT coefficients to string representation
+        // making the compressed data into a string
         StringBuilder compressed = new StringBuilder();
         for (int i = 0; i < cutoff; i++) {
             compressed.append(String.format("%.2f,%.2f;", fft[i].real(), fft[i].imag()));
         }
         
+        // adding metadata to keep track of stuff
+        String metadata = "FFT:" + originalLength + ":" + lossiness;
+        
         return new Message(
             originalMessage.getSender(),
             originalMessage.getReceiver(),
-            "FFT_COMPRESSED:" + originalLength + ":" + lossiness,
+            metadata,
             compressed.toString()
         );
     }
 
-    // FFT decompression
     public static Message decompressMessage(Message compressedMessage) {
-        String[] metadata = compressedMessage.getMetadata().split(":");
-        int originalLength = Integer.parseInt(metadata[1]);
+        // getting info from metadata
+        String[] metadataParts = compressedMessage.getMetadata().split(":");
+        int originalLength = Integer.parseInt(metadataParts[1]);
         
-        // Parse the compressed string back to Complex numbers
+        // breaking down the compressed string
         String[] coefficients = compressedMessage.getMessageBody().split(";");
         int paddedLength = nextPowerOf2(originalLength);
         Complex[] fft = new Complex[paddedLength];
         
-        // Reconstruct FFT array
+        // putting FFT array back together
         for (int i = 0; i < coefficients.length - 1; i++) {
             String[] parts = coefficients[i].split(",");
             fft[i] = new Complex(
@@ -82,14 +81,15 @@ public class Problem2 {
                 Double.parseDouble(parts[1])
             );
         }
+        // filling in the rest with zeros
         for (int i = coefficients.length - 1; i < paddedLength; i++) {
             fft[i] = new Complex(0, 0);
         }
         
-        // Apply inverse FFT
+        // doing inverse FFT to get back the message
         double[] samples = ifft(fft);
         
-        // Convert back to string
+        // turning numbers back into text
         StringBuilder decompressed = new StringBuilder();
         for (int i = 0; i < originalLength; i++) {
             decompressed.append((char) Math.round(samples[i]));
@@ -103,7 +103,7 @@ public class Problem2 {
         );
     }
 
-    // Helper class for complex numbers
+    // class for handling complex numbers needed for FFT
     private static class Complex {
         private final double real;
         private final double imag;
@@ -116,6 +116,7 @@ public class Problem2 {
         public double real() { return real; }
         public double imag() { return imag; }
         
+        // math operations for complex numbers
         public Complex plus(Complex other) {
             return new Complex(real + other.real, imag + other.imag);
         }
@@ -130,18 +131,13 @@ public class Problem2 {
                 real * other.imag + imag * other.real
             );
         }
-        
-        public Complex scale(double factor) {
-            return new Complex(real * factor, imag * factor);
-        }
     }
 
-    // FFT implementation
+    // converts regular numbers to complex for FFT
     private static Complex[] fft(double[] x) {
         int n = x.length;
         Complex[] result = new Complex[n];
         
-        // Convert real numbers to complex
         for (int i = 0; i < n; i++) {
             result[i] = new Complex(x[i], 0);
         }
@@ -149,6 +145,7 @@ public class Problem2 {
         return fft(result);
     }
 
+    // actual FFT implementation
     private static Complex[] fft(Complex[] x) {
         int n = x.length;
         
@@ -156,7 +153,7 @@ public class Problem2 {
             return x;
         }
         
-        // Split into even and odd
+        // splitting into even and odd parts
         Complex[] even = new Complex[n/2];
         Complex[] odd = new Complex[n/2];
         for (int i = 0; i < n/2; i++) {
@@ -164,11 +161,11 @@ public class Problem2 {
             odd[i] = x[2*i + 1];
         }
         
-        // Recursive FFT on even and odd parts
+        // recursive FFT calls
         Complex[] evenFFT = fft(even);
         Complex[] oddFFT = fft(odd);
         
-        // Combine results
+        // combining results
         Complex[] result = new Complex[n];
         for (int k = 0; k < n/2; k++) {
             double kth = -2 * k * Math.PI / n;
@@ -180,20 +177,19 @@ public class Problem2 {
         return result;
     }
 
-    // Inverse FFT
+    // inverse FFT to get back original signal
     private static double[] ifft(Complex[] x) {
         int n = x.length;
         
-        // Take complex conjugate
+        // need to take complex conjugate first
         Complex[] conjugate = new Complex[n];
         for (int i = 0; i < n; i++) {
             conjugate[i] = new Complex(x[i].real(), -x[i].imag());
         }
         
-        // Apply FFT
         Complex[] result = fft(conjugate);
         
-        // Take complex conjugate and scale
+        // getting real numbers back
         double[] realResult = new double[n];
         for (int i = 0; i < n; i++) {
             realResult[i] = result[i].real() / n;
@@ -202,7 +198,7 @@ public class Problem2 {
         return realResult;
     }
 
-    // Utility method to find next power of 2
+    // helper to get next power of 2 for FFT
     private static int nextPowerOf2(int n) {
         int power = 1;
         while (power < n) {
@@ -211,7 +207,7 @@ public class Problem2 {
         return power;
     }
     
-    // Setter for lossiness
+    // lets us change how lossy the compression is
     public static void setLossiness(double newLossiness) {
         if (newLossiness < 0 || newLossiness > 1) {
             throw new IllegalArgumentException("Lossiness must be between 0 and 1");
